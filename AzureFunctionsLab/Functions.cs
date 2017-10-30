@@ -34,5 +34,15 @@ namespace AzureFunctionsLab
                              );
             return x + y;
         }
+
+        public static int Add2(
+            HttpRequestMessage req,
+            int x,
+            int y,
+            TraceWriter log
+        )
+        {
+            return x + y;
+        }
     }
 }
