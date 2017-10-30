@@ -21,8 +21,17 @@ namespace AzureFunctionsLab
             TraceWriter log
         )
         {
-            int x = 1;
-            int y = 2;
+            // URLのクエリ文字列から値を抽出し、提供されたパラメータに基づいて加算を動的に実行できるように
+            int x = int.Parse(s: req
+                              .GetQueryNameValuePairs()
+                              .FirstOrDefault(q => string.Compare(strA: q.Key, strB: "x", ignoreCase: true) == 0)
+                              .Value
+                             );
+            int y = int.Parse(s: req
+                              .GetQueryNameValuePairs()
+                              .FirstOrDefault(q => string.Compare(q.Key, "y", true) == 0)
+                              .Value
+                             );
             return x + y;
         }
     }
