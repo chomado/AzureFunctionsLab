@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System.Configuration;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
-
+using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
@@ -86,6 +88,42 @@ namespace AzureFunctionsLab
         {
             return req.CreateResponse(HttpStatusCode.OK, table, "application/json");
         }
+
+        [FunctionName("AddData")]
+        public static async Task<HttpResponseMessage> AddData(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)]
+            HttpRequestMessage req,
+            TraceWriter log
+        )
+        {
+            try
+            {
+                var str = ConfigurationManager
+                    .ConnectionStrings["sqldb_connection"]
+                    .ConnectionString;
+
+                using (SqlConnection conn = new SqlConnection(str))
+                {
+                    conn.Open();
+
+                    var text = "INSERT INTO Contact (Id, LASTNAME, FIRSTNAME) " +
+                            "VALUES( 5, 'Chiyoda', 'Madoka')";
+                    using (SqlCommand cmd = new SqlCommand(text, conn))
+                    {
+                        // Execute the command and log the # rows affected.
+                        var rows = await cmd.ExecuteNonQueryAsync();
+                        log.Info($"{rows} rows were updated");
+                    }
+                    return req.CreateResponse(HttpStatusCode.OK, "test", "application/json");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                log.Info(message: $"しんでしまうとは　なさけない！　{ex}");
+            }
+            return null;
+        }
+
     }
 
 
