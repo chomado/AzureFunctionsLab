@@ -73,7 +73,21 @@ namespace AzureFunctionsLab
                 Sum = x + y
             };
         }
+
+
+        [FunctionName("List")]
+        public static HttpResponseMessage List(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)]
+            HttpRequestMessage req,
+            [Table("Results", "sums")]
+            IQueryable<TableRow> table,
+            TraceWriter log
+        )
+        {
+            return req.CreateResponse(HttpStatusCode.OK, table, "application/json");
+        }
     }
+
 
     public class TableRow : TableEntity
     {
