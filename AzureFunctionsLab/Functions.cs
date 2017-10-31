@@ -44,5 +44,41 @@ namespace AzureFunctionsLab
         {
             return x + y;
         }
+
+        [FunctionName("Process")]
+        [return: Table("Results")]
+        public static TableRow Process(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "Process/{x:int}/{y:int}")]
+            HttpRequestMessage req,
+            int x,
+            int y,
+            TraceWriter log, 
+            [Table("Results", "sums", "{x}_{y}")]
+            TableRow tableRow
+        )
+        {
+            if (tableRow != null)
+            {
+                log.Info($"{x} + {y} already exists");
+                return null;
+            }
+            log.Info($"Processing {x} + {y}");
+
+            return new TableRow()
+            { 
+                PartitionKey = "sums",
+                RowKey = $"{x}_{y}",
+                X = x,
+                Y = y,
+                Sum = x + y
+            };
+        }
+    }
+
+    public class TableRow : TableEntity
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Sum { get; set; }
     }
 }
