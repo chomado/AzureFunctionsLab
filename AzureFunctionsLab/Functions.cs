@@ -8,6 +8,8 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.WindowsAzure.Storage.Queue;
+using Newtonsoft.Json;
 
 namespace AzureFunctionsLab
 {
@@ -151,6 +153,49 @@ namespace AzureFunctionsLab
         }
 
 
+        // Queue trigger
+        // SQL DB のキューを見て、もしあったら、1つずつ取ってきて、引数my-test-queueに突っ込む
+        // 処理が終わったらキューを空っぽにする
+        [FunctionName("QueueTrigger")]
+        public static async Task QueueTrigger([QueueTrigger("my-test-queue")] string myQueueItem, TraceWriter log)
+        {
+            var str = ConfigurationManager
+                    .ConnectionStrings["sqldb_connection"]
+                    .ConnectionString;
+            
+            using (SqlConnection conn = new SqlConnection(str))
+            {
+                conn.Open();
+
+                var sqlQuery = "select ID, Name, power " +
+                                "from TestTable " +
+                                "where ID = @ID; ";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@ID", int.Parse(myQueueItem));
+
+                    using (var r = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await r.ReadAsync())
+                        {
+                            var data = new TestTable
+                            {
+                                ID = r.GetInt32(0),
+                                Name = r.GetString(1),
+                                Power = r.GetInt32(2)
+                            };
+                            log.Info(JsonConvert.SerializeObject(data));
+                        }
+                    }
+
+                }
+            }
+
+            log.Info($"C# function processed: {myQueueItem}");
+        }
+
+
         // Azure Functions から  Azure Storage キューにメッセージを追加
         // HTTP trigger with queue output binding
         [FunctionName("QueueOutput")]
@@ -175,5 +220,15 @@ namespace AzureFunctionsLab
         public int X { get; set; }
         public int Y { get; set; }
         public int Sum { get; set; }
+    }
+
+    public class TestTable
+    {
+        [JsonProperty(PropertyName = "id")]
+        public int ID { get; set; }
+        [JsonProperty(PropertyName = "name")]
+        public string Name { get; set; }
+        [JsonProperty(PropertyName = "power")]
+        public int Power { get; set; }
     }
 }
