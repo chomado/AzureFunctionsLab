@@ -131,6 +131,22 @@ namespace AzureFunctionsLab
             return null;
         }
 
+
+        // HTTP trigger with queue output binding
+        [FunctionName("QueueOutput")]
+        public static async Task<HttpResponseMessage> QueueOutput
+        (
+            [HttpTrigger] HttpRequestMessage req,
+            [Queue("my-test-queue")] IAsyncCollector<string> queue,
+            TraceWriter log
+        )
+        {
+            await queue.AddAsync("popopo-");
+            await queue.FlushAsync();
+            return req.CreateResponse(HttpStatusCode.OK, "pineapple", "application/json");
+
+        }
+
     }
 
 
