@@ -102,14 +102,21 @@ namespace AzureFunctionsLab
                     .ConnectionStrings["sqldb_connection"]
                     .ConnectionString;
 
+                // Sample user properties
+                var user = new { UserId = 5, FirstName = "Madoka", LastName = "Chiyoda" };
+
                 using (SqlConnection conn = new SqlConnection(str))
                 {
                     conn.Open();
 
                     var text = "INSERT INTO Contact (Id, LASTNAME, FIRSTNAME) " +
-                            "VALUES( 5, 'Chiyoda', 'Madoka')";
+                            "VALUES(@UserId, @LastName, @FirstName)";
                     using (SqlCommand cmd = new SqlCommand(text, conn))
                     {
+                        cmd.Parameters.AddWithValue("@UserId", user.UserId);
+                        cmd.Parameters.AddWithValue("@LastName", user.LastName);
+                        cmd.Parameters.AddWithValue("@FirstName", user.FirstName);
+
                         // Execute the command and log the # rows affected.
                         var rows = await cmd.ExecuteNonQueryAsync();
                         log.Info($"{rows} rows were updated");
