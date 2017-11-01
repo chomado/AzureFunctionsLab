@@ -103,20 +103,18 @@ namespace AzureFunctionsLab
                     .ConnectionString;
 
                 // Sample user properties
-                var user = new { UserId = 5, FirstName = "Madoka", LastName = "Chiyoda" };
+                var user = new { Name = "Madoka", Power = 1024 };
 
                 using (SqlConnection conn = new SqlConnection(str))
                 {
                     conn.Open();
 
-                    var text = "INSERT INTO Contact (Id, LASTNAME, FIRSTNAME) " +
-                            "VALUES(@UserId, @LastName, @FirstName)";
+                    var text = "INSERT INTO TestTable (Name, Power) " +
+                            "VALUES(@Name, @Power)";
                     using (SqlCommand cmd = new SqlCommand(text, conn))
                     {
-                        cmd.Parameters.AddWithValue("@UserId", user.UserId);
-                        cmd.Parameters.AddWithValue("@LastName", user.LastName);
-                        cmd.Parameters.AddWithValue("@FirstName", user.FirstName);
-
+                        cmd.Parameters.AddWithValue("@Power", user.Power);
+                        cmd.Parameters.AddWithValue("@Name", user.Name);
                         // Execute the command and log the # rows affected.
                         var rows = await cmd.ExecuteNonQueryAsync();
                         log.Info($"{rows} rows were updated");
@@ -132,6 +130,7 @@ namespace AzureFunctionsLab
         }
 
 
+        // Azure Functions から  Azure Storage キューにメッセージを追加
         // HTTP trigger with queue output binding
         [FunctionName("QueueOutput")]
         public static async Task<HttpResponseMessage> QueueOutput
