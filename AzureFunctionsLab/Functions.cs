@@ -94,6 +94,7 @@ namespace AzureFunctionsLab
         public static async Task<HttpResponseMessage> AddData(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)]
             HttpRequestMessage req,
+            [Queue("my-test-queue")] IAsyncCollector<string> queue,
             TraceWriter log
         )
         {
@@ -122,14 +123,22 @@ namespace AzureFunctionsLab
                     conn.Open();
 
                     var text = "INSERT INTO TestTable (Name, Power) " +
-                            "VALUES(@Name, @Power)";
+                            "VALUES(@Name, @Power);" +
+                            "SELECT @@IDENTITY;";// 新しく追加されたアイテムのID（自動採番で振られたやつ）
                     using (SqlCommand cmd = new SqlCommand(text, conn))
                     {
                         cmd.Parameters.AddWithValue("@Power", user.Power);
                         cmd.Parameters.AddWithValue("@Name", user.Name);
-                        // Execute the command and log the # rows affected.
-                        var rows = await cmd.ExecuteNonQueryAsync();
-                        log.Info($"{rows} rows were updated");
+
+                        // 新しく追加されたアイテムのID（自動採番で振られたやつ）
+                        var newItemID = await cmd.ExecuteScalarAsync();
+
+                        log.Info($"newItemID: {newItemID}");
+
+                        // 新しく追加されたアイテムのIDをキューに送る
+                        await queue.AddAsync($"{newItemID}");
+                        await queue.FlushAsync();
+                        return req.CreateResponse(HttpStatusCode.OK, "pineapple", "application/json");
                     }
                     return req.CreateResponse(HttpStatusCode.OK, "test", "application/json");
                 }
