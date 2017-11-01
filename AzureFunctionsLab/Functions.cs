@@ -89,6 +89,7 @@ namespace AzureFunctionsLab
             return req.CreateResponse(HttpStatusCode.OK, table, "application/json");
         }
 
+        // api/AddData?name=Madoka&power=1024
         [FunctionName("AddData")]
         public static async Task<HttpResponseMessage> AddData(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)]
@@ -102,8 +103,19 @@ namespace AzureFunctionsLab
                     .ConnectionStrings["sqldb_connection"]
                     .ConnectionString;
 
+                // URLのクエリ文字列から値を抽出
+                var name = req.GetQueryNameValuePairs()
+                    .FirstOrDefault(q => string.Compare(q.Key, "name", true) == 0)
+                    .Value;
+
+                var power = int.Parse(s: req
+                                  .GetQueryNameValuePairs()
+                                  .FirstOrDefault(q => string.Compare(strA: q.Key, strB: "power", ignoreCase: true) == 0)
+                                  .Value
+                                 );
+
                 // Sample user properties
-                var user = new { Name = "Madoka", Power = 1024 };
+                var user = new { Name = name, Power = power };
 
                 using (SqlConnection conn = new SqlConnection(str))
                 {
